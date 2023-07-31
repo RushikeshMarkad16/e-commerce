@@ -1,6 +1,8 @@
 run: ## Run e-commerce poject on host machine
 	go run cmd/main.go start
 
+build: ## Create executable file on host machine
+	go build cmd/main -o e-commerce
 
 # clean: ## Clean database file for a fresh start
 # 	rm test.db
