@@ -18,6 +18,7 @@ const (
 
 type Storer interface {
 	ListProducts(ctx context.Context) (products []Product, err error)
+	FindProductByID(ctx context.Context, id string) (product Product, err error)
 }
 
 type store struct {

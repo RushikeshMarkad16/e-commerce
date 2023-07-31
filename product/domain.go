@@ -11,3 +11,7 @@ type Product struct {
 type ListResponse struct {
 	Products []Product `json:"product"`
 }
+
+type FindByIdResponse struct {
+	Product Product `json:"product"`
+}

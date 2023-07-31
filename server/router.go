@@ -13,6 +13,7 @@ func initRouter(dep dependencies) (router *mux.Router) {
 	router = mux.NewRouter()
 	router.HandleFunc("/ping", pingHandler).Methods(http.MethodGet)
 	router.HandleFunc("/products", product.List(dep.ProductService)).Methods(http.MethodGet)
+	router.HandleFunc("/products/{id}", product.FindByID(dep.ProductService)).Methods(http.MethodGet)
 
 	return
 }
