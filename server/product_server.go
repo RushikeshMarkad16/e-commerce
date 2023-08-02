@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/RushikeshMarkad16/e-commerce/product"
 	"github.com/RushikeshMarkad16/e-commerce/utils/productpb"
@@ -21,9 +20,7 @@ func NewGrpcServer(service product.Service) productpb.ProductServiceServer {
 
 func (s *server) GetProduct(ctx context.Context, req *productpb.GetProductByIDRequest) (resp *productpb.ProductResponse, err error) {
 	i_id := int(req.GetId())
-	fmt.Println("Above FindByID")
 	product, err := s.service.FindByID(ctx, i_id)
-	fmt.Println("Below FindByID")
 	if err != nil {
 		return nil, err
 	}
