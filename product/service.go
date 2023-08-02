@@ -9,7 +9,7 @@ import (
 
 type Service interface {
 	List(ctx context.Context) (response ListResponse, err error)
-	FindByID(ctx context.Context, id string) (response FindByIdResponse, err error)
+	FindByID(ctx context.Context, id int) (response FindByIdResponse, err error)
 }
 
 type productService struct {
@@ -42,7 +42,7 @@ func (cs *productService) List(ctx context.Context) (response ListResponse, err 
 	return
 }
 
-func (cs *productService) FindByID(ctx context.Context, id string) (response FindByIdResponse, err error) {
+func (cs *productService) FindByID(ctx context.Context, id int) (response FindByIdResponse, err error) {
 	product, err := cs.store.FindProductByID(ctx, id)
 	if err == db.ErrProductNotExist {
 		cs.logger.Error("No product present", "err", err.Error())

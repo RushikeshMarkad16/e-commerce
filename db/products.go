@@ -28,7 +28,7 @@ func (s *store) ListProducts(ctx context.Context) (products []Product, err error
 	return
 }
 
-func (s *store) FindProductByID(ctx context.Context, id string) (product Product, err error) {
+func (s *store) FindProductByID(ctx context.Context, id int) (product Product, err error) {
 	err = WithDefaultTimeout(ctx, func(ctx context.Context) error {
 		return s.db.GetContext(ctx, &product, FindProductByIdQuery, id)
 	})

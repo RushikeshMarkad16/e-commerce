@@ -2,6 +2,7 @@ package product
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/RushikeshMarkad16/e-commerce/api"
 	"github.com/gorilla/mux"
@@ -37,8 +38,8 @@ func List(service Service) http.HandlerFunc {
 func FindByID(service Service) http.HandlerFunc {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		vars := mux.Vars(req)
-
-		resp, err := service.FindByID(req.Context(), vars["id"])
+		vars1, _ := strconv.Atoi(vars["id"])
+		resp, err := service.FindByID(req.Context(), vars1)
 
 		if err == errNoProductId {
 			api.Error(rw, http.StatusNotFound, api.Response{Message: err.Error()})
