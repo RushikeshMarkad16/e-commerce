@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"sync"
 
 	"github.com/RushikeshMarkad16/e-commerce/app"
 	"github.com/RushikeshMarkad16/e-commerce/config"
@@ -9,6 +10,8 @@ import (
 	"github.com/RushikeshMarkad16/e-commerce/server"
 	"github.com/urfave/cli"
 )
+
+var wg sync.WaitGroup
 
 func main() {
 	config.Load()
@@ -23,7 +26,10 @@ func main() {
 			Name:  "start",
 			Usage: "start server",
 			Action: func(c *cli.Context) error {
-				server.StartAPIServer()
+				wg.Add(2)
+				go server.StartAPIServer(&wg)
+				go server.StartgRPCServer(&wg)
+				wg.Wait()
 				return nil
 			},
 		},
