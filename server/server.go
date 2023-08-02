@@ -15,7 +15,7 @@ import (
 )
 
 func StartAPIServer(wg *sync.WaitGroup) {
-	fmt.Println("Starting Rest Server....")
+	log.Println("Starting Rest Server....")
 	defer wg.Done()
 	port := config.AppPort()
 	server := negroni.Classic()
@@ -33,7 +33,7 @@ func StartAPIServer(wg *sync.WaitGroup) {
 
 func StartgRPCServer(wg *sync.WaitGroup) {
 	defer wg.Done()
-	fmt.Println("Starting grpc server....")
+	log.Println("Starting grpc server....")
 	listen, err := net.Listen("tcp", ":50051")
 
 	if err != nil {
