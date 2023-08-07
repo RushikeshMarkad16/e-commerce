@@ -54,6 +54,9 @@ func (cr Order) Validate() (err error) {
 		if det.Quantity == 0 {
 			return errEmptyQuantity
 		}
+		if det.Quantity > 10 {
+			return errGreaterthanTen
+		}
 
 	}
 	return
