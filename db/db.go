@@ -17,8 +17,12 @@ const (
 )
 
 type Storer interface {
+	//Product
 	ListProducts(ctx context.Context) (products []Product, err error)
 	FindProductByID(ctx context.Context, id int) (product Product, err error)
+
+	//Order
+	CreateOrder(ctx context.Context, order []*Order_item) (err error)
 }
 
 type store struct {

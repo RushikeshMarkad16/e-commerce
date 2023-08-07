@@ -52,7 +52,6 @@ func (cs *productService) FindByID(ctx context.Context, id int) (response FindBy
 		cs.logger.Error("Error finding product", "err", err.Error(), "id", id)
 		return
 	}
-
 	response.Product.ID = product.ID
 	response.Product.Name = product.Name
 	response.Product.Availability = product.Availability
