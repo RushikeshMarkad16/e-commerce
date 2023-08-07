@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,8 +16,12 @@ const (
 	GetOrderIdQuery       = `SELECT id FROM order1 ORDER BY id DESC LIMIT 1 ` //to get last id
 	CreateOrderItemQuery  = `INSERT INTO order_item (id, order_id, product_id, quantity) VALUES(?, ?, ?, ?)`
 	UpdQuantityQuery      = `UPDATE product SET availability = availability-? WHERE id = ? AND availability>0`
-	// GetAmountQuery=`INSERT INTO`
-	// GetCurrQuantityQuery  = `SELECT availability from product where id = ?`
+	GetPriceQuery         = `SELECT price from product WHERE id = ?`
+	GetCurrAmount         = `SELECT amount from order1 where id = ?`
+	UpdAmntQuery          = `UPDATE order1 SET amount = amount+? WHERE id = ?`
+	GetCategoryQuery      = `SELECT category FROM product WHERE id = ?`
+	GetAmountQuery        = `SELECT amount FROM order1 WHERE id = ?`
+	UpdFinalAmount        = `UPDATE order1 SET discount_perc = ? , final_amount = ? WHERE id = ?`
 )
 
 type Order1 struct {
@@ -57,12 +60,13 @@ func (s *store) CreateOrder(ctx context.Context, orders []*Order_item) (err erro
 	}
 	return Transact(ctx, s.db, &sql.TxOptions{}, func(ctx context.Context) error {
 
-		_, err = s.db.ExecContext(ctx,
+		_, err = s.db.ExecContext(
+			ctx,
 			CreateOrderQuery,
 		)
 
 		if err != nil {
-			fmt.Printf("error while crating order %s", err.Error())
+			fmt.Printf("error while creating order %s", err.Error())
 			return err
 		}
 
@@ -75,13 +79,16 @@ func (s *store) CreateOrder(ctx context.Context, orders []*Order_item) (err erro
 				fmt.Println("No order id present")
 				return err
 			} else {
-				fmt.Printf("Error while fetchng order id : %v", err)
+				fmt.Printf("Error while fetching order id : %v", err)
 			}
 		}
+
+		premium_count := 0
 
 		for _, order := range orders {
 			uid := uuid.New().String()
 
+			//To create order1 entry
 			_, err = s.db.Exec(
 				CreateOrderItemQuery,
 				uid,
@@ -89,20 +96,72 @@ func (s *store) CreateOrder(ctx context.Context, orders []*Order_item) (err erro
 				order.Product_id,
 				order.Quantity,
 			)
-
 			if err != nil {
-				log.Printf("error :%s", err.Error())
 				return err
 			}
 
+			//Retrive the price of product
+			price_row := s.db.QueryRow(
+				GetPriceQuery,
+				order.Product_id,
+			)
+			var o_price int
+			err = price_row.Scan(&o_price)
+
+			//Retrive the category of product
+			catg_row := s.db.QueryRow(
+				GetCategoryQuery,
+				order.Product_id,
+			)
+			var o_catg string
+			err = catg_row.Scan(&o_catg)
+			if o_catg == "Premium" {
+				premium_count = premium_count + 1
+			}
+
+			o_amnt := order.Quantity * o_price
+
+			_, err := s.db.Exec(
+				UpdAmntQuery,
+				o_amnt,
+				o_id,
+			)
+			if err != nil {
+				return err
+			}
+
+			//Update the product quantity
 			_, err = s.db.Exec(
 				UpdQuantityQuery,
 				order.Quantity,
 				order.Product_id,
 			)
+
 			if err != nil {
 				return err
 			}
+		}
+
+		amount_row := s.db.QueryRow(
+			GetAmountQuery,
+			o_id,
+		)
+		var o_amount int
+		err = amount_row.Scan(&o_amount)
+		final_amount := o_amount
+		disc := 0
+		if premium_count >= 3 {
+			final_amount = o_amount - (o_amount * 10 / 100)
+			disc = 10
+		}
+		_, err = s.db.Exec(
+			UpdFinalAmount,
+			disc,
+			final_amount,
+			o_id,
+		)
+		if err != nil {
+			return err
 		}
 
 		return err
