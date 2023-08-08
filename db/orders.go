@@ -22,6 +22,7 @@ const (
 	GetAmountQuery        = `SELECT amount FROM order1 WHERE id = ?`
 	UpdFinalAmount        = `UPDATE order1 SET discount_perc = ? , final_amount = ? WHERE id = ?`
 	listOrdersQuery       = `SELECT id, amount, discount_perc, final_amount, dispatch_date, order_status FROM order1 ORDER BY id`
+	FindOrderByIdQuery    = `SELECT id, amount, discount_perc, final_amount, dispatch_date, order_status FROM order1 WHERE id = ?`
 )
 
 type Order1 struct {
@@ -177,6 +178,16 @@ func (s *store) ListOrders(ctx context.Context) (orders []Order1, err error) {
 	}
 	if err == sql.ErrNoRows {
 		return orders, ErrOrderNotExist
+	}
+	return
+}
+
+func (s *store) FindOrderByID(ctx context.Context, id int) (order Order1, err error) {
+	err = WithDefaultTimeout(ctx, func(ctx context.Context) error {
+		return s.db.GetContext(ctx, &order, FindOrderByIdQuery, id)
+	})
+	if err == sql.ErrNoRows {
+		return order, ErrOrderNotExist
 	}
 	return
 }

@@ -12,6 +12,7 @@ import (
 type Service interface {
 	create(ctx context.Context, req Order) (err error)
 	List(ctx context.Context) (response ListResponse, err error)
+	FindByID(ctx context.Context, id int) (response FindByIdResponse, err error)
 }
 
 type orderService struct {
@@ -83,6 +84,30 @@ func (cs *orderService) List(ctx context.Context) (response ListResponse, err er
 
 		response.Orders = append(response.Orders, orderData)
 	}
+
+	return
+}
+
+func (cs *orderService) FindByID(ctx context.Context, id int) (response FindByIdResponse, err error) {
+	order, err := cs.store.FindOrderByID(ctx, id)
+	if err == db.ErrOrderNotExist {
+		cs.logger.Error("No order present", "err", err.Error())
+		return response, errNoOrderId
+	}
+	if err != nil {
+		cs.logger.Error("Error finding order", "err", err.Error(), "id", id)
+		return
+	}
+	response.Order.ID = order.ID
+	response.Order.Amount = order.Amount
+	response.Order.Disc_perc = order.Disc_perc
+	response.Order.Final_amnt = order.Final_amnt
+	if order.Disp_date.Valid {
+		date, _ := time.Parse("2006-01-02", order.Disp_date.String)
+		fmt.Print(date, order.Disp_date)
+		response.Order.Disp_date = date.String()
+	}
+	response.Order.Order_status = order.Order_status
 
 	return
 }

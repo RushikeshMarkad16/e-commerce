@@ -22,3 +22,7 @@ type Order1 struct {
 type ListResponse struct {
 	Orders []Order1 `json:"order1"`
 }
+
+type FindByIdResponse struct {
+	Order Order1 `json:"order1"`
+}
