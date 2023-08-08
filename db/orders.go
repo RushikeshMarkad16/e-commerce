@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -22,15 +21,16 @@ const (
 	GetCategoryQuery      = `SELECT category FROM product WHERE id = ?`
 	GetAmountQuery        = `SELECT amount FROM order1 WHERE id = ?`
 	UpdFinalAmount        = `UPDATE order1 SET discount_perc = ? , final_amount = ? WHERE id = ?`
+	listOrdersQuery       = `SELECT id, amount, discount_perc, final_amount, dispatch_date, order_status FROM order1 ORDER BY id`
 )
 
 type Order1 struct {
-	ID           int
-	Amount       int
-	Disc_perc    int
-	Final_amnt   int
-	Disp_date    time.Time
-	Order_status string
+	ID           int            `db:"id"`
+	Amount       int            `db:"amount"`
+	Disc_perc    int            `db:"discount_perc"`
+	Final_amnt   int            `db:"final_amount"`
+	Disp_date    sql.NullString `db:"dispatch_date"`
+	Order_status string         `db:"order_status"`
 }
 
 type Order_item struct {
@@ -166,4 +166,17 @@ func (s *store) CreateOrder(ctx context.Context, orders []*Order_item) (err erro
 
 		return err
 	})
+}
+
+func (s *store) ListOrders(ctx context.Context) (orders []Order1, err error) {
+	err = WithDefaultTimeout(ctx, func(ctx context.Context) error {
+		return s.db.SelectContext(ctx, &orders, listOrdersQuery)
+	})
+	if err != nil {
+		fmt.Printf("error while fetching Orders %s", err.Error())
+	}
+	if err == sql.ErrNoRows {
+		return orders, ErrOrderNotExist
+	}
+	return
 }

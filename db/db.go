@@ -23,6 +23,7 @@ type Storer interface {
 
 	//Order
 	CreateOrder(ctx context.Context, order []*Order_item) (err error)
+	ListOrders(ctx context.Context) (orders []Order1, err error)
 }
 
 type store struct {
