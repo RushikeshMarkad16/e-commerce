@@ -13,6 +13,7 @@ type Service interface {
 	create(ctx context.Context, req Order) (err error)
 	List(ctx context.Context) (response ListResponse, err error)
 	FindByID(ctx context.Context, id int) (response FindByIdResponse, err error)
+	Update(ctx context.Context, req OrderStatus) (err error)
 }
 
 type orderService struct {
@@ -109,6 +110,35 @@ func (cs *orderService) FindByID(ctx context.Context, id int) (response FindById
 	}
 	response.Order.Order_status = order.Order_status
 
+	return
+}
+
+func (cs *orderService) Update(ctx context.Context, c OrderStatus) (err error) {
+	err = c.ValidateUpdate()
+	if err != nil {
+		cs.logger.Error("Invalid Request for order status update", "err", err.Error(), "orderstatus", c)
+		return
+	}
+
+	err = cs.store.UpdateOrderStatus(ctx, &db.Order1{
+		ID:           c.Order_id,
+		Order_status: c.Status,
+	})
+	if err != nil {
+		cs.logger.Error("Error updating order", "err", err.Error(), "orderstatus", c)
+		return
+	}
+	return
+}
+
+func (up OrderStatus) ValidateUpdate() (err error) {
+	if up.Order_id == 0 {
+		return errEmptyOrderId
+	}
+
+	if up.Status == "" {
+		return errEmptyStatus
+	}
 	return
 }
 

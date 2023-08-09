@@ -9,4 +9,6 @@ var (
 	errGreaterthanTen   = errors.New("Sorry....cannot order product quantity more than 10")
 	errNoOrders         = errors.New("No orders found")
 	errNoOrderId        = errors.New("Order ID is not present")
+	errEmptyOrderId     = errors.New("Order ID cannot be empty")
+	errEmptyStatus      = errors.New("Order Status cannot be empty")
 )

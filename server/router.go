@@ -22,6 +22,7 @@ func initRouter(dep dependencies) (router *mux.Router) {
 	router.HandleFunc("/order", order.Create(dep.OrderService)).Methods(http.MethodPost)
 	router.HandleFunc("/orders", order.List(dep.OrderService)).Methods(http.MethodGet)
 	router.HandleFunc("/order/{id}", order.FindByID(dep.OrderService)).Methods(http.MethodGet)
+	router.HandleFunc("/order/status", order.UpdateStatus(dep.OrderService)).Methods(http.MethodPatch)
 
 	return
 }

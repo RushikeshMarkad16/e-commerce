@@ -9,20 +9,21 @@ import (
 )
 
 const (
-	ProductIdPresentQuery = `SELECT COUNT(*) FROM product where id = ?`
-	ProductStatusQuery    = `SELECT COUNT(*) from product WHERE id = ? AND availability >= ?`
-	CreateOrderQuery      = `INSERT INTO order1 VALUES (DEFAULT,0,0,0,NULL,"Placed")`
-	GetOrderIdQuery       = `SELECT id FROM order1 ORDER BY id DESC LIMIT 1 ` //to get last id
-	CreateOrderItemQuery  = `INSERT INTO order_item (id, order_id, product_id, quantity) VALUES(?, ?, ?, ?)`
-	UpdQuantityQuery      = `UPDATE product SET availability = availability-? WHERE id = ? AND availability>0`
-	GetPriceQuery         = `SELECT price from product WHERE id = ?`
-	GetCurrAmount         = `SELECT amount from order1 where id = ?`
-	UpdAmntQuery          = `UPDATE order1 SET amount = amount+? WHERE id = ?`
-	GetCategoryQuery      = `SELECT category FROM product WHERE id = ?`
-	GetAmountQuery        = `SELECT amount FROM order1 WHERE id = ?`
-	UpdFinalAmount        = `UPDATE order1 SET discount_perc = ? , final_amount = ? WHERE id = ?`
-	listOrdersQuery       = `SELECT id, amount, discount_perc, final_amount, dispatch_date, order_status FROM order1 ORDER BY id`
-	FindOrderByIdQuery    = `SELECT id, amount, discount_perc, final_amount, dispatch_date, order_status FROM order1 WHERE id = ?`
+	ProductIdPresentQuery  = `SELECT COUNT(*) FROM product where id = ?`
+	ProductStatusQuery     = `SELECT COUNT(*) from product WHERE id = ? AND availability >= ?`
+	CreateOrderQuery       = `INSERT INTO order1 VALUES (DEFAULT,0,0,0,NULL,"Placed")`
+	GetOrderIdQuery        = `SELECT id FROM order1 ORDER BY id DESC LIMIT 1 ` //to get last id
+	CreateOrderItemQuery   = `INSERT INTO order_item (id, order_id, product_id, quantity) VALUES(?, ?, ?, ?)`
+	UpdQuantityQuery       = `UPDATE product SET availability = availability-? WHERE id = ? AND availability>0`
+	GetPriceQuery          = `SELECT price from product WHERE id = ?`
+	GetCurrAmount          = `SELECT amount from order1 where id = ?`
+	UpdAmntQuery           = `UPDATE order1 SET amount = amount+? WHERE id = ?`
+	GetCategoryQuery       = `SELECT category FROM product WHERE id = ?`
+	GetAmountQuery         = `SELECT amount FROM order1 WHERE id = ?`
+	UpdFinalAmount         = `UPDATE order1 SET discount_perc = ? , final_amount = ? WHERE id = ?`
+	listOrdersQuery        = `SELECT id, amount, discount_perc, final_amount, dispatch_date, order_status FROM order1 ORDER BY id`
+	FindOrderByIdQuery     = `SELECT id, amount, discount_perc, final_amount, dispatch_date, order_status FROM order1 WHERE id = ?`
+	UpdateOrderStatusQuery = `UPDATE order1 SET order_status = ?, dispatch_date = CURDATE() WHERE id = ?`
 )
 
 type Order1 struct {
@@ -190,4 +191,15 @@ func (s *store) FindOrderByID(ctx context.Context, id int) (order Order1, err er
 		return order, ErrOrderNotExist
 	}
 	return
+}
+
+func (s *store) UpdateOrderStatus(ctx context.Context, order *Order1) (err error) {
+	return Transact(ctx, s.db, &sql.TxOptions{}, func(ctx context.Context) error {
+		_, err = s.db.Exec(
+			UpdateOrderStatusQuery,
+			order.Order_status,
+			order.ID,
+		)
+		return err
+	})
 }

@@ -83,3 +83,27 @@ func FindByID(service Service) http.HandlerFunc {
 		api.Success(rw, http.StatusOK, resp)
 	})
 }
+
+func UpdateStatus(service Service) http.HandlerFunc {
+	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		var c OrderStatus
+		err := json.NewDecoder(req.Body).Decode(&c)
+		if err != nil {
+			api.Error(rw, http.StatusBadRequest, api.Response{Message: err.Error()})
+			return
+		}
+
+		err = service.Update(req.Context(), c)
+		if isBadRequest(err) {
+			api.Error(rw, http.StatusBadRequest, api.Response{Message: err.Error()})
+			return
+		}
+
+		if err != nil {
+			api.Error(rw, http.StatusInternalServerError, api.Response{Message: err.Error()})
+			return
+		}
+
+		api.Success(rw, http.StatusOK, api.Response{Message: "Order Status Updated Successfully"})
+	})
+}
