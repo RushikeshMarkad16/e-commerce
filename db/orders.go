@@ -4,21 +4,22 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 
+	"github.com/RushikeshMarkad16/e-commerce/utils"
+	"github.com/RushikeshMarkad16/e-commerce/utils/productpb"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 )
 
 const (
 	ProductIdPresentQuery  = `SELECT COUNT(*) FROM product where id = ?`
-	ProductStatusQuery     = `SELECT COUNT(*) from product WHERE id = ? AND availability >= ?`
 	CreateOrderQuery       = `INSERT INTO order1 VALUES (DEFAULT,0,0,0,NULL,"Placed")`
 	GetOrderIdQuery        = `SELECT id FROM order1 ORDER BY id DESC LIMIT 1 ` //to get last id
 	CreateOrderItemQuery   = `INSERT INTO order_item (id, order_id, product_id, quantity) VALUES(?, ?, ?, ?)`
 	UpdQuantityQuery       = `UPDATE product SET availability = availability-? WHERE id = ? AND availability>0`
-	GetPriceQuery          = `SELECT price from product WHERE id = ?`
 	GetCurrAmount          = `SELECT amount from order1 where id = ?`
 	UpdAmntQuery           = `UPDATE order1 SET amount = amount+? WHERE id = ?`
-	GetCategoryQuery       = `SELECT category FROM product WHERE id = ?`
 	GetAmountQuery         = `SELECT amount FROM order1 WHERE id = ?`
 	UpdFinalAmount         = `UPDATE order1 SET discount_perc = ? , final_amount = ? WHERE id = ?`
 	listOrdersQuery        = `SELECT id, amount, discount_perc, final_amount, dispatch_date, order_status FROM order1 ORDER BY id`
@@ -45,18 +46,23 @@ type Order_item struct {
 func (s *store) CreateOrder(ctx context.Context, orders []*Order_item) (err error) {
 
 	for _, order := range orders {
+
+		//TO know if the product id exist
 		count := 0
 		s.db.GetContext(ctx, &count, ProductIdPresentQuery, order.Product_id)
 		if count < 1 {
 			return ErrProductNotExist
 		}
+		//grpc call
+		resp, err := GrpcInfo(order.Product_id)
+		if err != nil {
+			return err
+		}
 
-		curr_quantity := 0
-		s.db.GetContext(ctx, &curr_quantity, ProductStatusQuery, order.Product_id, order.Quantity)
-		if curr_quantity == 0 {
+		if resp.Availability == 0 {
 			return ErrZeroAvailable
 		}
-		if curr_quantity < 1 {
+		if resp.Availability < int32(order.Quantity) {
 			return ErrLessAvailable
 		}
 	}
@@ -72,6 +78,7 @@ func (s *store) CreateOrder(ctx context.Context, orders []*Order_item) (err erro
 			return err
 		}
 
+		//Get the last row i.e order id from order1
 		row := s.db.QueryRow(GetOrderIdQuery)
 
 		var o_id int
@@ -85,8 +92,10 @@ func (s *store) CreateOrder(ctx context.Context, orders []*Order_item) (err erro
 			}
 		}
 
+		//Counter for premium category
 		premium_count := 0
 
+		//Range each order_item
 		for _, order := range orders {
 			uid := uuid.New().String()
 
@@ -102,28 +111,21 @@ func (s *store) CreateOrder(ctx context.Context, orders []*Order_item) (err erro
 				return err
 			}
 
-			//Retrive the price of product
-			price_row := s.db.QueryRow(
-				GetPriceQuery,
-				order.Product_id,
-			)
-			var o_price int
-			err = price_row.Scan(&o_price)
+			//Retrive the price and category of product
+			//grpc call
+			resp, err := GrpcInfo(order.Product_id)
+			if err != nil {
+				return err
+			}
 
-			//Retrive the category of product
-			catg_row := s.db.QueryRow(
-				GetCategoryQuery,
-				order.Product_id,
-			)
-			var o_catg string
-			err = catg_row.Scan(&o_catg)
-			if o_catg == "Premium" {
+			//Update the counter if category is premium
+			if resp.Category == "Premium" {
 				premium_count = premium_count + 1
 			}
 
-			o_amnt := order.Quantity * o_price
+			o_amnt := order.Quantity * int(resp.Price)
 
-			_, err := s.db.Exec(
+			_, err = s.db.Exec(
 				UpdAmntQuery,
 				o_amnt,
 				o_id,
@@ -202,4 +204,24 @@ func (s *store) UpdateOrderStatus(ctx context.Context, order *Order1) (err error
 		)
 		return err
 	})
+}
+
+func GrpcInfo(product_id int) (resp *productpb.ProductResponse, err error) {
+	//Establish grpc connection
+	conn := utils.GrpcClient()
+	client := utils.GetClient(conn)
+	defer conn.Close()
+	if client == nil {
+		return nil, errors.New("empty conn")
+	}
+
+	req := productpb.GetProductByIDRequest{
+		Id: int32(product_id),
+	}
+
+	resp, err = client.GetProduct(context.Background(), &req)
+	if err != nil {
+		log.Fatalf("error while calling GetProduct function over gRPC : %v", err)
+	}
+	return resp, err
 }
