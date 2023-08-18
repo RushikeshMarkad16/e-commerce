@@ -30,3 +30,6 @@ The Order service should be able to update the orderStatus for a particular orde
 
 product category values: Premium/Regular/Budget 
 order status values: Placed/Dispatched/Completed/Returned/Cancelled
+
+Postman link : https://api.postman.com/collections/13056412-f14618c5-4121-417a-9848-f268ec4321c5?access_key=PMAT-01H83NAHZ6R6HF96CE40VGNGGY
+
